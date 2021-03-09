@@ -1,0 +1,10 @@
+#!/bin/sh
+
+contentdir="content"
+feedsdir="feeds"
+
+case $1 in
+    n|new) echo "create new series";;
+    u|update) echo "new chapter for existing series";;
+    h|*) echo "karat-cli - tool for mangaing KaratsubaDex";;
+esac

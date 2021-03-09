@@ -1,0 +1,14 @@
+/* site-wide css */
+
+html {
+    --bg-light: #91CCEC;
+
+    font-family: arial, helvetica, sans-serif;
+}
+
+body {
+    padding: 0;
+    margin: 0;
+    height: 100%;
+}
+

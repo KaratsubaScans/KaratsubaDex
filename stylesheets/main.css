@@ -1,0 +1,18 @@
+/* index page css */
+
+#main-banner {
+    text-align: center;
+    background-color: var(--bg-light);
+
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+}
+
+#main-banner h1 {
+    margin: 0;
+}
+
+#main-banner h3 {
+    margin: 0;
+}
+
