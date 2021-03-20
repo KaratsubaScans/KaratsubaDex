@@ -4,7 +4,9 @@ This is the site where we host the manga that **KaratsubaScans** has translated.
 
 ### People
 \<translator|proofreader\>=@pinosaur
+
 \<cleaner|typesetter\>=@fairnightzz,@confused
+
 \<redrawer\>=@amaz1n,@chengs
 
 ### karat-cli
