@@ -1,10 +1,29 @@
-#!/bin/sh
+#!/usr/bin/make -f
 
-contentdir="content"
-feedsdir="feeds"
+## config variables
+SITE_URL:=https://karatsubascans.com
 
-case $1 in
-    n|new) echo "create new series";;
-    u|update) echo "new chapter for existing series";;
-    h|*) echo "karat-cli - tool for mangaing KaratsubaDex";;
-esac
+## no trailing slash in dirs
+CONTENT_DIR:=content
+RSS_DIR:=feeds
+OUT_DIR:=manga
+TEMPLATE_DIR:=templates
+
+help:
+	$(info karat-cli help|build)
+
+init:
+	echo "init"
+
+build:
+	echo "build"
+	# for manga in $(CONTENT_DIR)/*; do \
+	# 	cat "$$manga"; \
+	# done
+
+$(OUT_DIR)/%.html: $(CONTENT_DIR)/%.html
+	cat $<
+
+$(RSS_DIR)/%.xml:
+	echo "feeds"
+
