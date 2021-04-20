@@ -5,3 +5,6 @@
 @ 2021-03-21
 <https://files.karatsubascans.com/girls_last_tour/chapter1.pdf>
 
+## Chapter 2 - War
+@ 2021-03-21
+<https://files.karatsubascans.com/girls_last_tour/chapter1.pdf>

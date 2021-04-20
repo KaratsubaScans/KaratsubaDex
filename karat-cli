@@ -9,21 +9,31 @@ RSS_DIR:=feeds
 OUT_DIR:=manga
 TEMPLATE_DIR:=templates
 
+.PHONY: help init build clean new-manga new-chapter
+
 help:
-	$(info karat-cli help|build)
+	@echo 'karat-cli help|build|clean|new-manga|new-chapter'
 
 init:
-	echo "init"
+	@echo "init"
 
 build:
-	echo "build"
-	# for manga in $(CONTENT_DIR)/*; do \
-	# 	cat "$$manga"; \
-	# done
+	@for manga in ${CONTENT_DIR}/*; do \
+		cat "${manga}"; \
+	done
 
-$(OUT_DIR)/%.html: $(CONTENT_DIR)/%.html
-	cat $<
+new-manga:
+	@if [ -z "${name}" ]; then \
+		echo "Missing name field."; \
+		exit 1; \
+	fi
+	@echo "Creating new manga page for '${name}'"
+	@# todo, sanitize name first
+	@cp "${TEMPLATE_DIR}/mangainfo.template.html" "${OUT_DIR}/${name}.html"
 
-$(RSS_DIR)/%.xml:
-	echo "feeds"
+clean:
+	@echo "clean"
+
+# $(RSS_DIR)/%.xml:
+# 	@echo "feeds"
 
