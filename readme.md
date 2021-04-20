@@ -10,5 +10,5 @@ This is the site where we host the manga that **KaratsubaScans** has translated.
 \<redrawer\>=@amaz1n,@chengs
 
 ### karat-cli
-**karat-cli** is a smol tool for writing static html to the site. It can generate rss entries and update chapter lists when a new chapter is released.
+**karat-cli** is a smol tool written in make for writing static html to the site. It can generate rss entries and update chapter lists when a new chapter is released.
 
