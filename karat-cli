@@ -34,7 +34,22 @@ new-manga:
 	echo "Once you are satisfied with your changes, you can rebuild to generate the html page."
 
 new-chapter:
-	@echo "new chapter"
+	@if [ -z "$(name)" ]; then \
+		echo "Missing name field."; exit 1; \
+	fi; \
+	chapter_info=$(shell mktemp); \
+	cat "$(TEMPLATE_DIR)/mangachapter.template.json" > $$chapter_info; \
+	"$$EDITOR" "$$chapter_info";
+	#jq ".chapters += [$(shell cat $(chapter_info))]" "$(CONTENT_DIR)/$(name).json" #| sponge "$(CONTENT_DIR)/$(name).json" 
+	# chapter_json='$(shell cat "$(TEMPLATE_DIR)/mangachapter.template.json")'; \
+	# @ls $(CONTENT_DIR) | column -c 1 | nl; \
+	# read -p 'Choose an entry by number > ' choice; \
+	# $(shell ls $(CONTENT_DIR) | column -c 1 | sed -n "$$choice p"); \
+	# chosen=$(shell ls $(CONTENT_DIR) | column -c 1); \
+	# echo "$$chosen"; \
+	# if [ -z "$$chosen" ]; then \
+	# 	echo "Invalid choice"; exit 1; \
+	# fi
 
 clean:
 	@# ask user for confirm here
