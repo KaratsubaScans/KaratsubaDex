@@ -9,7 +9,7 @@ RSS_DIR:=feeds
 OUT_DIR:=manga
 TEMPLATE_DIR:=templates
 
-MANGA_LIST=$(subst .content.html,,$(shell ls $(CONTENT_DIR)))
+MANGA_LIST=$(subst .json,,$(shell ls $(CONTENT_DIR)))
 
 .PHONY: help init build clean new-manga new-chapter
 
@@ -27,10 +27,10 @@ new-manga:
 		echo "Missing name field."; exit 1; \
 	fi; \
 	echo "Creating new manga page for '$(name)'"; \
-	KS_MANGATITLE="$(name)"; export KS_MANGATITLE; \
-	content_file="$(CONTENT_DIR)/$$KS_MANGATITLE.content.html"; \
-	envsubst < "$(TEMPLATE_DIR)/mangainfo.template.html" > "$$content_file"; \
-	"$$EDITOR" "$$content_file"; \
+	export KS_MANGATITLE="$(name)"; \
+	content_file="$(CONTENT_DIR)/$$KS_MANGATITLE.json"; \
+	envsubst < "$(TEMPLATE_DIR)/mangainfo.template.json" > "$$content_file"; \
+	"$$EDITOR" "$$content_file"; 
 	echo "Once you are satisfied with your changes, you can rebuild to generate the html page."
 
 new-chapter:
@@ -41,12 +41,13 @@ clean:
 	@echo "cleaning..."; \
 	rm $(OUT_DIR)/*
 
-$(OUT_DIR)/%.html: $(CONTENT_DIR)/%.content.html
+$(OUT_DIR)/%.html: $(CONTENT_DIR)/%.json
 	@echo "building manga page: $@";\
-	KS_MANGATITLE=$(notdir $(basename $@)); export KS_MANGATITLE; \
+	export KS_MANGATITLE=$(notdir $(basename $@)); \
+	export KS_DESCRIPTION=$(shell jq '.description' "$^"); \
 	envsubst < $(TEMPLATE_DIR)/head.html >> "$@"; \
-	cat "$^" >> "$@"; \
-	cat $(TEMPLATE_DIR)/foot.html >> "$@"
+	envsubst < $(TEMPLATE_DIR)/mangapage.template.html >> "$@"; \
+	envsubst < $(TEMPLATE_DIR)/foot.html >> "$@";
 
 # $(RSS_DIR)/%.xml:
 # 	@echo "feeds"
