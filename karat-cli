@@ -16,10 +16,6 @@ MANGA_LIST=$(subst .json,,$(shell ls $(CONTENT_DIR)))
 help:
 	@echo 'karat-cli help|build|clean|new-manga|new-chapter'
 
-# prob dont need this one
-init:
-	@echo "initializing directories"
-
 build: $(OUT_DIR)/$(addsuffix .html,$(MANGA_LIST))
 
 new-manga:
@@ -30,19 +26,19 @@ new-manga:
 	export KS_MANGATITLE="$(name)"; \
 	content_file="$(CONTENT_DIR)/$$KS_MANGATITLE.json"; \
 	envsubst < "$(TEMPLATE_DIR)/mangainfo.template.json" > "$$content_file"; \
-	"$$EDITOR" "$$content_file"; 
+	"$$EDITOR" "$$content_file"; \
 	echo "Once you are satisfied with your changes, you can rebuild to generate the html page."
 
 new-chapter:
 	@if [ -z "$(name)" ]; then \
 		echo "Missing name field."; exit 1; \
 	fi; \
-	chapter_info=$(shell mktemp); \
+	chapter_info=`mktemp`; \
 	cat "$(TEMPLATE_DIR)/mangachapter.template.json" > "$$chapter_info"; \
 	"$$EDITOR" "$$chapter_info"; \
-	sed -i '1s/^/.chapter += /' "$$chapter_info"; \
-	cat "$$chapter_info"; \
-	jq -f "$$chapter_info" "$(CONTENT_DIR)/$(name).json" | sponge "$(CONTENT_DIR)/$(name).json" 
+	sed -i '1s/^/.chapters += /' "$$chapter_info"; \
+	jq -f "$$chapter_info" "$(CONTENT_DIR)/$(name).json" | sponge "$(CONTENT_DIR)/$(name).json"; \
+	rm "$$chapter_info"
 
 clean:
 	@# ask user for confirm here
@@ -52,10 +48,23 @@ clean:
 $(OUT_DIR)/%.html: $(CONTENT_DIR)/%.json
 	@echo "building manga page: $@";\
 	export KS_MANGATITLE=$(notdir $(basename $@)); \
-	export KS_DESCRIPTION=$(shell jq '.description' "$^"); \
+	export KS_DESCRIPTION=`jq '.description' "$^"`; \
 	envsubst < $(TEMPLATE_DIR)/head.html >> "$@"; \
 	envsubst < $(TEMPLATE_DIR)/mangapage.template.html >> "$@"; \
-	envsubst < $(TEMPLATE_DIR)/foot.html >> "$@";
+	envsubst < $(TEMPLATE_DIR)/foot.html >> "$@"; \
+	chapter_html=`mktemp`; \
+	chapter_json=`jq -rc '.chapters[]' "$(CONTENT_DIR)/$(notdir $(basename $@)).json"`; \
+	for chapter in "$$chapter_json"; do \
+		echo "$$chapter"; \
+		printf '\n\n'; \
+		export KS_CHAPTERNAME=`echo "$$chapter" | jq '.chapter_name'`; \
+		export KS_PNGLINK=`echo "$$chapter" | jq '.chapter_name'`; \
+		export KS_ZIPLINK=`echo "$$chapter" | jq '.zip_link'`; \
+		export KS_MESSAGE=`echo "$$chapter" | jq '.message'`; \
+		envsubst < $(TEMPLATE_DIR)/mangapage_chapter.template.html >> "$$chapter_html"; \
+	done; \
+	rm $$chapter_html
+
 
 # $(RSS_DIR)/%.xml:
 # 	@echo "feeds"
