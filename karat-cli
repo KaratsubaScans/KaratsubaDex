@@ -1,5 +1,8 @@
 #!/usr/bin/make -f
 
+# KARAT-CLI =-=-=-=-=-=-=-=-=
+# requires sponge (from moreutils) and jq
+
 ## config variables
 SITE_URL:=https://karatsubascans.com
 
@@ -53,19 +56,16 @@ $(OUT_DIR)/%.html: $(CONTENT_DIR)/%.json
 	envsubst < $(TEMPLATE_DIR)/mangapage.template.html >> "$@"; \
 	envsubst < $(TEMPLATE_DIR)/foot.html >> "$@"; \
 	chapter_html=`mktemp`; \
-	chapter_json=`jq -rc '.chapters[]' "$(CONTENT_DIR)/$(notdir $(basename $@)).json"`; \
-	for chapter in "$$chapter_json"; do \
-		echo "$$chapter"; \
-		printf '\n\n'; \
-		export KS_CHAPTERNAME=`echo "$$chapter" | jq '.chapter_name'`; \
-		export KS_PNGLINK=`echo "$$chapter" | jq '.chapter_name'`; \
-		export KS_ZIPLINK=`echo "$$chapter" | jq '.zip_link'`; \
-		export KS_MESSAGE=`echo "$$chapter" | jq '.message'`; \
-		envsubst < $(TEMPLATE_DIR)/mangapage_chapter.template.html >> "$$chapter_html"; \
+	for k in `jq -c '.chapters | keys | .[]' "$(CONTENT_DIR)/$$KS_MANGATITLE.json"`; do \
+		chapter=`jq -rc ".chapters[$$k]" "$(CONTENT_DIR)/$$KS_MANGATITLE.json"`; \
+		export KS_CHAPTERNAME=`echo "$$chapter" | jq -r '.chapter_name'`; \
+		export KS_PNGLINK=`echo "$$chapter" | jq -r '.png_link'`; \
+		export KS_ZIPLINK=`echo "$$chapter" | jq -r '.zip_link'`; \
+		export KS_MESSAGE=`echo "$$chapter" | jq -r '.message'`; \
+		envsubst < $(TEMPLATE_DIR)/mangapage_chapter.template.html > "$$chapter_html"; \
+		sed -i "/<!-- KS_CHAPTERLIST -->/r $$chapter_html" "$@"; \
 	done; \
-	rm $$chapter_html
-
+	rm $$chapter_html;
 
 # $(RSS_DIR)/%.xml:
 # 	@echo "feeds"
-
