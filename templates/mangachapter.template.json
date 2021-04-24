@@ -3,6 +3,7 @@
         chapter_name: "",
         png_link: "",
         zip_link: "",
-        message: ""
+        message: "",
+        time_published: ""
     }
 ]

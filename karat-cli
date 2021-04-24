@@ -8,10 +8,11 @@ SITE_URL:=https://karatsubascans.com
 
 ## no trailing slash in dirs
 CONTENT_DIR:=content
-RSS_DIR:=feeds
-OUT_DIR:=manga
 TEMPLATE_DIR:=templates
+OUT_DIR:=build
+RSS_DIR:=$(OUT_DIR)/feeds
 
+# misc vars
 MANGA_LIST=$(subst .json,,$(shell ls $(CONTENT_DIR)))
 
 .PHONY: help init build clean new-manga new-chapter
@@ -44,28 +45,32 @@ new-chapter:
 	rm "$$chapter_info"
 
 clean:
-	@# ask user for confirm here
 	@echo "cleaning..."; \
 	rm $(OUT_DIR)/*
 
 $(OUT_DIR)/%.html: $(CONTENT_DIR)/%.json
 	@echo "building manga page: $@";\
-	export KS_MANGATITLE=$(notdir $(basename $@)); \
-	export KS_DESCRIPTION=`jq '.description' "$^"`; \
+	export mangafile=$(notdir $(basename $@)); \
+	export KS_MANGATITLE=`jq -r '.name' "$^"`; \
+	export KS_DESCRIPTION=`jq -r '.description' "$^"`; \
 	envsubst < $(TEMPLATE_DIR)/head.html >> "$@"; \
 	envsubst < $(TEMPLATE_DIR)/mangapage.template.html >> "$@"; \
 	envsubst < $(TEMPLATE_DIR)/foot.html >> "$@"; \
 	chapter_html=`mktemp`; \
-	for k in `jq -c '.chapters | keys | .[]' "$(CONTENT_DIR)/$$KS_MANGATITLE.json"`; do \
-		chapter=`jq -rc ".chapters[$$k]" "$(CONTENT_DIR)/$$KS_MANGATITLE.json"`; \
+	for k in `jq -c '.chapters | keys | .[]' "$(CONTENT_DIR)/$$mangafile.json"`; do \
+		chapter=`jq -rc ".chapters[$$k]" "$(CONTENT_DIR)/$$mangafile.json"`; \
 		export KS_CHAPTERNAME=`echo "$$chapter" | jq -r '.chapter_name'`; \
 		export KS_PNGLINK=`echo "$$chapter" | jq -r '.png_link'`; \
 		export KS_ZIPLINK=`echo "$$chapter" | jq -r '.zip_link'`; \
 		export KS_MESSAGE=`echo "$$chapter" | jq -r '.message'`; \
+		export KS_TIMEPUBLISHED=`echo "$$chapter" | jq -r '.time_published'`; \
 		envsubst < $(TEMPLATE_DIR)/mangapage_chapter.template.html > "$$chapter_html"; \
 		sed -i "/<!-- KS_CHAPTERLIST -->/r $$chapter_html" "$@"; \
 	done; \
 	rm $$chapter_html;
 
-# $(RSS_DIR)/%.xml:
-# 	@echo "feeds"
+# might not be best idea to rebuild this
+# (may cause it to appear unread when modified)
+$(RSS_DIR)/%.xml: $(CONTENT_DIR)/%.json
+	@echo "feeds"
+
