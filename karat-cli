@@ -20,7 +20,7 @@ MANGA_LIST=$(subst .json,,$(shell ls $(CONTENT_DIR)))
 help:
 	@echo 'karat-cli help|build|clean|new-manga|new-chapter'
 
-build: $(OUT_DIR)/index.html $(OUT_DIR)/$(addsuffix .html,$(MANGA_LIST))
+build: $(OUT_DIR)/index.html $(OUT_DIR)/manga/$(addsuffix .html,$(MANGA_LIST))
 
 new-manga:
 	@if [ -z "$(name)" ]; then \
@@ -37,7 +37,7 @@ new-chapter:
 	@if [ -z "$(name)" ]; then \
 		echo "Missing name field."; exit 1; \
 	fi; \
-	chapter_info=`mktemp`; \
+	chapter_info=`mktemp --suffix=.json`; \
 	cat "$(TEMPLATE_DIR)/mangachapter.template.json" > "$$chapter_info"; \
 	"$$EDITOR" "$$chapter_info"; \
 	sed -i '1s/^/.chapters += /' "$$chapter_info"; \
@@ -46,34 +46,37 @@ new-chapter:
 
 clean:
 	@echo "cleaning..."; \
-	rm $(OUT_DIR)/*.html
+	rm $(OUT_DIR)/index.html $(OUT_DIR)/manga/*.html
 
 $(OUT_DIR)/index.html: $(CONTENT_DIR)/
 	@echo "building index..."; \
+	mkdir -p "$(OUT_DIR)/manga/"; \
 	manga_html=`mktemp`; \
 	for manga_file in `ls $(CONTENT_DIR)/`; do \
 		export KS_MANGATITLE=`jq -r '.name' "$(CONTENT_DIR)/$$manga_file"`; \
 		export KS_BANNERURL=`jq -r '.banner_url' "$(CONTENT_DIR)/$$manga_file"`; \
+		export KS_MANGAPAGE=manga/`echo "$$manga_file" | sed 's/.json/.html/'`; \
 		envsubst < "$(TEMPLATE_DIR)/main_manga.html" > "$$manga_html"; \
 		cp 'index.html' "$(OUT_DIR)/index.html"; \
 		sed -i "/<!-- KS_MANGALIST -->/r $$manga_html" "$(OUT_DIR)/index.html"; \
 	done; \
 	rm "$$manga_html"
 
-$(OUT_DIR)/%.html: $(CONTENT_DIR)/%.json
+$(OUT_DIR)/manga/%.html: $(CONTENT_DIR)/%.json
 	@echo "building manga page: $@"; \
 	export mangafile=$(notdir $(basename $@)); \
 	export KS_MANGATITLE=`jq -r '.name' "$^"`; \
 	export KS_DESCRIPTION=`jq -r '.description' "$^"`; \
-	envsubst < $(TEMPLATE_DIR)/head.html >> "$@"; \
+	export KS_COVERURL=`jq -r '.cover_url' "$(CONTENT_DIR)/$$mangafile.json"`; \
+	envsubst < $(TEMPLATE_DIR)/mangapage_head.html >> "$@"; \
 	envsubst < $(TEMPLATE_DIR)/mangapage.template.html >> "$@"; \
-	envsubst < $(TEMPLATE_DIR)/foot.html >> "$@"; \
+	envsubst < $(TEMPLATE_DIR)/mangapage_foot.html >> "$@"; \
 	chapter_html=`mktemp`; \
 	for k in `jq -c '.chapters | keys | .[]' "$(CONTENT_DIR)/$$mangafile.json"`; do \
 		chapter=`jq -rc ".chapters[$$k]" "$(CONTENT_DIR)/$$mangafile.json"`; \
 		export KS_CHAPTERNAME=`echo "$$chapter" | jq -r '.chapter_name'`; \
 		export KS_PNGLINK=`echo "$$chapter" | jq -r '.png_link'`; \
-		export KS_ZIPLINK=`echo "$$chapter" | jq -r '.zip_link'`; \
+		export KS_PDFLINK=`echo "$$chapter" | jq -r '.pdf_link'`; \
 		export KS_MESSAGE=`echo "$$chapter" | jq -r '.message'`; \
 		export KS_TIMEPUBLISHED=`echo "$$chapter" | jq -r '.time_published'`; \
 		envsubst < $(TEMPLATE_DIR)/mangapage_chapter.template.html > "$$chapter_html"; \

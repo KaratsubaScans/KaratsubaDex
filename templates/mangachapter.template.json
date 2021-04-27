@@ -2,7 +2,7 @@
     {
         chapter_name: "",
         png_link: "",
-        zip_link: "",
+        pdf_link: "",
         message: "",
         time_published: ""
     }
