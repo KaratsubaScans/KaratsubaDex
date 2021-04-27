@@ -4,8 +4,10 @@
 # requires sponge (from moreutils) and jq
 
 ## config variables
-# SITEURL:=https://karatsubascans.com
-SITEURL:=file:///home/pinosaur/Repos/KaratsubaDex/build
+SITEURL:=https://karatsubascans.com
+
+## overwrite variables for local build
+include config.mk
 
 ## no trailing slash in dirs
 CONTENT_DIR:=content
@@ -13,7 +15,7 @@ TEMPLATE_DIR:=templates
 OUT_DIR:=build
 RSS_DIR:=$(OUT_DIR)/feeds
 
-# misc vars
+## misc vars
 MANGA_LIST=$(subst .json,,$(shell ls $(CONTENT_DIR)))
 
 .PHONY: help init build clean new-manga new-chapter

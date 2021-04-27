@@ -35,7 +35,7 @@ footer {
     text-decoration: none;
     color: var(--text-light); 
 
-    transition: 0.3s all;
+    transition: color 0.3s;
 }
 
 .main-navitem a:hover {
@@ -99,7 +99,7 @@ footer {
     height: 1.5rem;
     padding: 0.25rem;
 
-    transition: all 0.3s;
+    transition: filter 0.3s;
     filter: invert(99%) sepia(4%) saturate(18%) hue-rotate(245deg) brightness(106%) contrast(100%);    
 }
 
