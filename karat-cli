@@ -20,7 +20,7 @@ MANGA_LIST=$(subst .json,,$(shell ls $(CONTENT_DIR)))
 help:
 	@echo 'karat-cli help|build|clean|new-manga|new-chapter'
 
-build: $(OUT_DIR)/$(addsuffix .html,$(MANGA_LIST))
+build: $(OUT_DIR)/index.html $(OUT_DIR)/$(addsuffix .html,$(MANGA_LIST))
 
 new-manga:
 	@if [ -z "$(name)" ]; then \
@@ -46,10 +46,22 @@ new-chapter:
 
 clean:
 	@echo "cleaning..."; \
-	rm $(OUT_DIR)/*
+	rm $(OUT_DIR)/*.html
+
+$(OUT_DIR)/index.html: $(CONTENT_DIR)/
+	@echo "building index..."; \
+	manga_html=`mktemp`; \
+	for manga_file in `ls $(CONTENT_DIR)/`; do \
+		export KS_MANGATITLE=`jq -r '.name' "$(CONTENT_DIR)/$$manga_file"`; \
+		export KS_BANNERURL=`jq -r '.banner_url' "$(CONTENT_DIR)/$$manga_file"`; \
+		envsubst < "$(TEMPLATE_DIR)/main_manga.html" > "$$manga_html"; \
+		cp 'index.html' "$(OUT_DIR)/index.html"; \
+		sed -i "/<!-- KS_MANGALIST -->/r $$manga_html" "$(OUT_DIR)/index.html"; \
+	done; \
+	rm "$$manga_html"
 
 $(OUT_DIR)/%.html: $(CONTENT_DIR)/%.json
-	@echo "building manga page: $@";\
+	@echo "building manga page: $@"; \
 	export mangafile=$(notdir $(basename $@)); \
 	export KS_MANGATITLE=`jq -r '.name' "$^"`; \
 	export KS_DESCRIPTION=`jq -r '.description' "$^"`; \

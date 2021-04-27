@@ -1,0 +1,20 @@
+/* site-wide css */
+
+html {
+    --bg-light: #2C2C2B;
+    --bg-dark: #1D1D1E;
+
+    --text-light: #E3E3E3;
+    --text-dark: #B6B6B6;
+    /* --bg-logo: #3A3A3A; */
+
+    font-family: arial, helvetica, sans-serif;
+    background-color: var(--bg-dark);
+}
+
+body {
+    padding: 0;
+    margin: 0;
+    height: 100%;
+}
+
