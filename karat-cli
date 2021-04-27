@@ -4,7 +4,8 @@
 # requires sponge (from moreutils) and jq
 
 ## config variables
-SITE_URL:=https://karatsubascans.com
+# SITEURL:=https://karatsubascans.com
+SITEURL:=file:///home/pinosaur/Repos/KaratsubaDex/build
 
 ## no trailing slash in dirs
 CONTENT_DIR:=content
@@ -51,26 +52,31 @@ clean:
 $(OUT_DIR)/index.html: $(CONTENT_DIR)/
 	@echo "building index..."; \
 	mkdir -p "$(OUT_DIR)/manga/"; \
+	export KS_SITEURL="$(SITEURL)"; \
+	cp $(TEMPLATE_DIR)/body.template.html "$@"; \
+	sed -i "/<!-- KS_PAGEMOUNT -->/r $(TEMPLATE_DIR)/homepage.template.html" "$@"; \
+	envsubst < "$@" | sponge "$@"; \
 	manga_html=`mktemp`; \
 	for manga_file in `ls $(CONTENT_DIR)/`; do \
 		export KS_MANGATITLE=`jq -r '.name' "$(CONTENT_DIR)/$$manga_file"`; \
 		export KS_BANNERURL=`jq -r '.banner_url' "$(CONTENT_DIR)/$$manga_file"`; \
 		export KS_MANGAPAGE=manga/`echo "$$manga_file" | sed 's/.json/.html/'`; \
 		envsubst < "$(TEMPLATE_DIR)/main_manga.html" > "$$manga_html"; \
-		cp 'index.html' "$(OUT_DIR)/index.html"; \
-		sed -i "/<!-- KS_MANGALIST -->/r $$manga_html" "$(OUT_DIR)/index.html"; \
+		sed -i "/<!-- KS_MANGALIST -->/r $$manga_html" "$@"; \
 	done; \
 	rm "$$manga_html"
 
 $(OUT_DIR)/manga/%.html: $(CONTENT_DIR)/%.json
 	@echo "building manga page: $@"; \
 	export mangafile=$(notdir $(basename $@)); \
+	export KS_SITEURL="$(SITEURL)"; \
 	export KS_MANGATITLE=`jq -r '.name' "$^"`; \
 	export KS_DESCRIPTION=`jq -r '.description' "$^"`; \
 	export KS_COVERURL=`jq -r '.cover_url' "$(CONTENT_DIR)/$$mangafile.json"`; \
-	envsubst < $(TEMPLATE_DIR)/mangapage_head.html >> "$@"; \
-	envsubst < $(TEMPLATE_DIR)/mangapage.template.html >> "$@"; \
-	envsubst < $(TEMPLATE_DIR)/mangapage_foot.html >> "$@"; \
+	cp $(TEMPLATE_DIR)/body.template.html "$@"; \
+	sed -i "/<!-- KS_HEAD -->/r $(TEMPLATE_DIR)/mangapage_head.template.html" "$@"; \
+	sed -i "/<!-- KS_PAGEMOUNT -->/r $(TEMPLATE_DIR)/mangapage.template.html" "$@"; \
+	envsubst < "$@" | sponge "$@"; \
 	chapter_html=`mktemp`; \
 	for k in `jq -c '.chapters | keys | .[]' "$(CONTENT_DIR)/$$mangafile.json"`; do \
 		chapter=`jq -rc ".chapters[$$k]" "$(CONTENT_DIR)/$$mangafile.json"`; \
