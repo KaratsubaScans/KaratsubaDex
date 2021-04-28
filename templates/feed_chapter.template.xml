@@ -1,5 +1,9 @@
 <item>
 <title>$KS_CHAPTERNAME</title>
 <link></link>
-<description><\description>
+<description>
+Published: $KS_TIMEPUBLISHED
+
+$KS_MESSAGE
+<\description>
 <\item>

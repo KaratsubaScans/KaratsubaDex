@@ -2,9 +2,9 @@
 <rss version="2.0">
 
 <channel>
-<title>$MANGATITLE | KaratsubaScans</title>
-<link></link>
-<description></description>
+<title>$KS_MANGATITLE | KaratsubaScans</title>
+<link>$KS_MANGAURL</link>
+<description>$KS_DESCRIPTION</description>
 
 <!-- KS_FEED -->
 

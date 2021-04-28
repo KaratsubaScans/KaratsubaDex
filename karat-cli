@@ -16,14 +16,14 @@ OUT_DIR:=build
 RSS_DIR:=$(OUT_DIR)/feeds
 
 ## misc vars
-MANGA_LIST=$(subst .json,,$(shell ls $(CONTENT_DIR)))
+MANGA_LIST=$(subst .json,,$(shell ls $(CONTENT_DIR) | grep .*\.json$))
 
 .PHONY: help init build clean new-manga new-chapter
 
 help:
 	@echo 'karat-cli help|build|clean|new-manga|new-chapter'
 
-build: $(OUT_DIR)/index.html $(OUT_DIR)/manga/$(addsuffix .html,$(MANGA_LIST))
+build: $(OUT_DIR)/index.html $(addprefix $(OUT_DIR)/manga/,$(addsuffix .html,$(MANGA_LIST))) $(addprefix $(RSS_DIR)/,$(addsuffix .xml,$(MANGA_LIST)))
 
 new-manga:
 	@if [ -z "$(name)" ]; then \
@@ -49,7 +49,7 @@ new-chapter:
 
 clean:
 	@echo "cleaning..."; \
-	rm $(OUT_DIR)/index.html $(OUT_DIR)/manga/*.html
+	rm $(OUT_DIR)/index.html $(OUT_DIR)/manga/*.html $(RSS_DIR)/*.xml
 
 $(OUT_DIR)/index.html: $(CONTENT_DIR)/
 	@echo "building index..."; \
@@ -90,10 +90,26 @@ $(OUT_DIR)/manga/%.html: $(CONTENT_DIR)/%.json
 		envsubst < $(TEMPLATE_DIR)/mangapage_chapter.template.html > "$$chapter_html"; \
 		sed -i "/<!-- KS_CHAPTERLIST -->/r $$chapter_html" "$@"; \
 	done; \
-	rm $$chapter_html;
+	rm "$$chapter_html";
 
-# might not be best idea to rebuild this
-# (may cause it to appear unread when modified)
+# this is pretty similar to manga page, maybe abstract somehow
 $(RSS_DIR)/%.xml: $(CONTENT_DIR)/%.json
-	@echo "feeds"
+	@echo "building feed: $@"; \
+	export mangafile=$(notdir $(basename $@)); \
+	export KS_MANGATITLE=`jq -r '.name' "$^"`; \
+	export KS_MANGAURL="$(SITEURL)/manga/$$mangafile.html"; \
+	export KS_DESCRIPTION=`jq -r '.description' "$^"`; \
+	envsubst < $(TEMPLATE_DIR)/feed.template.xml > "$@"; \
+	chapter_xml=`mktemp`; \
+	for k in `jq -c '.chapters | keys | .[]' "$(CONTENT_DIR)/$$mangafile.json"`; do \
+		chapter=`jq -rc ".chapters[$$k]" "$(CONTENT_DIR)/$$mangafile.json"`; \
+		export KS_CHAPTERNAME=`echo "$$chapter" | jq -r '.chapter_name'`; \
+		export KS_PNGLINK=`echo "$$chapter" | jq -r '.png_link'`; \
+		export KS_PDFLINK=`echo "$$chapter" | jq -r '.pdf_link'`; \
+		export KS_MESSAGE=`echo "$$chapter" | jq -r '.message'`; \
+		export KS_TIMEPUBLISHED=`echo "$$chapter" | jq -r '.time_published'`; \
+		envsubst < $(TEMPLATE_DIR)/feed_chapter.template.xml > "$$chapter_xml"; \
+		sed -i "/<!-- KS_FEED -->/r $$chapter_xml" "$@"; \
+	done; \
+	rm "$$chapter_xml";
 
