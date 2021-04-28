@@ -16,14 +16,14 @@ OUT_DIR:=build
 RSS_DIR:=$(OUT_DIR)/feeds
 
 ## misc vars
-MANGA_LIST=$(subst .json,,$(shell ls $(CONTENT_DIR) | grep .*\.json$))
+MANGA_LIST=$(subst .json,,$(shell ls $(CONTENT_DIR) | grep .*\.json))
 
 .PHONY: help init build clean new-manga new-chapter
 
 help:
 	@echo 'karat-cli help|build|clean|new-manga|new-chapter'
 
-build: $(OUT_DIR)/index.html $(addprefix $(OUT_DIR)/manga/,$(addsuffix .html,$(MANGA_LIST))) $(addprefix $(RSS_DIR)/,$(addsuffix .xml,$(MANGA_LIST)))
+build: $(OUT_DIR)/index.html $(OUT_DIR)/blog.html $(OUT_DIR)/team.html $(addprefix $(OUT_DIR)/manga/,$(addsuffix .html,$(MANGA_LIST))) $(addprefix $(RSS_DIR)/,$(addsuffix .xml,$(MANGA_LIST)))
 
 new-manga:
 	@if [ -z "$(name)" ]; then \
@@ -49,7 +49,7 @@ new-chapter:
 
 clean:
 	@echo "cleaning..."; \
-	rm $(OUT_DIR)/index.html $(OUT_DIR)/manga/*.html $(RSS_DIR)/*.xml
+	rm $(OUT_DIR)/index.html $(OUT_DIR)/blog.html $(OUT_DIR)/team.html $(OUT_DIR)/manga/*.html $(RSS_DIR)/*.xml
 
 $(OUT_DIR)/index.html: $(CONTENT_DIR)/
 	@echo "building index..."; \
@@ -67,6 +67,20 @@ $(OUT_DIR)/index.html: $(CONTENT_DIR)/
 		sed -i "/<!-- KS_MANGALIST -->/r $$manga_html" "$@"; \
 	done; \
 	rm "$$manga_html"
+
+$(OUT_DIR)/blog.html:
+	@echo "building blog..."; \
+	export KS_SITEURL="$(SITEURL)"; \
+	cp $(TEMPLATE_DIR)/body.template.html "$@"; \
+	sed -i "/<!-- KS_PAGEMOUNT -->/r $(TEMPLATE_DIR)/blogpage.template.html" "$@"; \
+	envsubst < "$@" | sponge "$@"; \
+
+$(OUT_DIR)/team.html:
+	@echo "building team page..."; \
+	export KS_SITEURL="$(SITEURL)"; \
+	cp $(TEMPLATE_DIR)/body.template.html "$@"; \
+	sed -i "/<!-- KS_PAGEMOUNT -->/r $(TEMPLATE_DIR)/teampage.template.html" "$@"; \
+	envsubst < "$@" | sponge "$@"; \
 
 $(OUT_DIR)/manga/%.html: $(CONTENT_DIR)/%.json
 	@echo "building manga page: $@"; \
