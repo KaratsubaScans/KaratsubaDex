@@ -1,9 +1,9 @@
 <item>
 <title>$KS_CHAPTERNAME</title>
-<link></link>
+<link>$KS_PNGLINK</link>
 <description>
-Published: $KS_TIMEPUBLISHED
-
+<![CDATA[
 $KS_MESSAGE
-<\description>
-<\item>
+]]>
+</description>
+</item>

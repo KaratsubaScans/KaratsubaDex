@@ -15,8 +15,23 @@
     margin-left: 1rem;
 }
 
+#mangapage-title-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
 #manga-title {
     margin: 0;
+}
+
+.title-links {
+    color: var(--text-light);
+    text-decoration: none;
+}
+
+.title-links:hover {
+    text-decoration: underline;
 }
 
 #chapter-list {

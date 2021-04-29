@@ -89,6 +89,7 @@ $(OUT_DIR)/manga/%.html: $(CONTENT_DIR)/%.json
 	export KS_MANGATITLE=`jq -r '.name' "$^"`; \
 	export KS_DESCRIPTION=`jq -r '.description' "$^"`; \
 	export KS_COVERURL=`jq -r '.cover_url' "$(CONTENT_DIR)/$$mangafile.json"`; \
+	export KS_RSSURL="$(SITEURL)/feeds/$$mangafile.xml"; \
 	cp $(TEMPLATE_DIR)/body.template.html "$@"; \
 	sed -i "/<!-- KS_HEAD -->/r $(TEMPLATE_DIR)/mangapage_head.template.html" "$@"; \
 	sed -i "/<!-- KS_PAGEMOUNT -->/r $(TEMPLATE_DIR)/mangapage.template.html" "$@"; \
