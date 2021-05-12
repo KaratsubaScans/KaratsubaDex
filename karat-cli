@@ -7,23 +7,30 @@
 SITEURL:=https://karatsubascans.com
 
 ## overwrite variables for local build
+ifneq (,./config.mk)
 include config.mk
+endif
 
 ## no trailing slash in dirs
 CONTENT_DIR:=content
+MANGA_CONTENT_DIR:=$(CONTENT_DIR)/manga
+BLOG_CONTENT_DIR:=$(CONTENT_DIR)/blog
 TEMPLATE_DIR:=templates
 OUT_DIR:=build
 RSS_DIR:=$(OUT_DIR)/feeds
 
 ## misc vars
-MANGA_LIST=$(subst .json,,$(shell ls $(CONTENT_DIR) | grep .*\.json))
+MANGA_LIST=$(subst .json,,$(shell ls $(MANGA_CONTENT_DIR) | grep .*\.json))
 
-.PHONY: help init build clean new-manga new-chapter
+.PHONY: help init build clean new-manga new-chapter new-blog edit-blog
 
 help:
-	@echo 'karat-cli help|build|clean|new-manga|new-chapter'
+	@echo 'karat-cli help|build|clean|new-manga|new-chapter|new-blog|edit-blog'
 
 build: $(OUT_DIR)/index.html $(OUT_DIR)/blog.html $(OUT_DIR)/team.html $(addprefix $(OUT_DIR)/manga/,$(addsuffix .html,$(MANGA_LIST))) $(addprefix $(RSS_DIR)/,$(addsuffix .xml,$(MANGA_LIST)))
+
+init:
+	mkdir -p $(MANGA_CONTENT_DIR) $(BLOG_CONTENT_DIR)
 
 new-manga:
 	@if [ -z "$(name)" ]; then \
@@ -31,7 +38,7 @@ new-manga:
 	fi; \
 	echo "Creating new manga page for '$(name)'"; \
 	export KS_MANGATITLE="$(name)"; \
-	content_file="$(CONTENT_DIR)/$$KS_MANGATITLE.json"; \
+	content_file="$(MANGA_CONTENT_DIR)/$$KS_MANGATITLE.json"; \
 	envsubst < "$(TEMPLATE_DIR)/mangainfo.template.json" > "$$content_file"; \
 	"$$EDITOR" "$$content_file"; \
 	echo "Once you are satisfied with your changes, you can rebuild to generate the html page."
@@ -44,14 +51,20 @@ new-chapter:
 	cat "$(TEMPLATE_DIR)/mangachapter.template.json" > "$$chapter_info"; \
 	"$$EDITOR" "$$chapter_info"; \
 	sed -i '1s/^/.chapters += /' "$$chapter_info"; \
-	jq -f "$$chapter_info" "$(CONTENT_DIR)/$(name).json" | sponge "$(CONTENT_DIR)/$(name).json"; \
+	jq -f "$$chapter_info" "$(MANGA_CONTENT_DIR)/$(name).json" | sponge "$(CONTENT_DIR)/$(name).json"; \
 	rm "$$chapter_info"
+
+new-blog:
+	@echo "new blog"
+
+edit-blog:
+	@echo "edit blog"
 
 clean:
 	@echo "cleaning..."; \
 	rm $(OUT_DIR)/index.html $(OUT_DIR)/blog.html $(OUT_DIR)/team.html $(OUT_DIR)/manga/*.html $(RSS_DIR)/*.xml
 
-$(OUT_DIR)/index.html: $(CONTENT_DIR)/
+$(OUT_DIR)/index.html: $(MANGA_CONTENT_DIR)/
 	@echo "building index..."; \
 	mkdir -p "$(OUT_DIR)/manga/"; \
 	export KS_SITEURL="$(SITEURL)"; \
@@ -59,9 +72,9 @@ $(OUT_DIR)/index.html: $(CONTENT_DIR)/
 	sed -i "/<!-- KS_PAGEMOUNT -->/r $(TEMPLATE_DIR)/homepage.template.html" "$@"; \
 	envsubst < "$@" | sponge "$@"; \
 	manga_html=`mktemp`; \
-	for manga_file in `ls $(CONTENT_DIR)/`; do \
-		export KS_MANGATITLE=`jq -r '.name' "$(CONTENT_DIR)/$$manga_file"`; \
-		export KS_BANNERURL=`jq -r '.banner_url' "$(CONTENT_DIR)/$$manga_file"`; \
+	for manga_file in `ls $(MANGA_CONTENT_DIR)/`; do \
+		export KS_MANGATITLE=`jq -r '.name' "$(MANGA_CONTENT_DIR)/$$manga_file"`; \
+		export KS_BANNERURL=`jq -r '.banner_url' "$(MANGA_CONTENT_DIR)/$$manga_file"`; \
 		export KS_MANGAPAGE=manga/`echo "$$manga_file" | sed 's/.json/.html/'`; \
 		envsubst < "$(TEMPLATE_DIR)/main_manga.html" > "$$manga_html"; \
 		sed -i "/<!-- KS_MANGALIST -->/r $$manga_html" "$@"; \
@@ -82,21 +95,21 @@ $(OUT_DIR)/team.html:
 	sed -i "/<!-- KS_PAGEMOUNT -->/r $(TEMPLATE_DIR)/teampage.template.html" "$@"; \
 	envsubst < "$@" | sponge "$@"; \
 
-$(OUT_DIR)/manga/%.html: $(CONTENT_DIR)/%.json
+$(OUT_DIR)/manga/%.html: $(MANGA_CONTENT_DIR)/%.json
 	@echo "building manga page: $@"; \
 	export mangafile=$(notdir $(basename $@)); \
 	export KS_SITEURL="$(SITEURL)"; \
 	export KS_MANGATITLE=`jq -r '.name' "$^"`; \
 	export KS_DESCRIPTION=`jq -r '.description' "$^"`; \
-	export KS_COVERURL=`jq -r '.cover_url' "$(CONTENT_DIR)/$$mangafile.json"`; \
+	export KS_COVERURL=`jq -r '.cover_url' "$(MANGA_CONTENT_DIR)/$$mangafile.json"`; \
 	export KS_RSSURL="$(SITEURL)/feeds/$$mangafile.xml"; \
 	cp $(TEMPLATE_DIR)/body.template.html "$@"; \
 	sed -i "/<!-- KS_HEAD -->/r $(TEMPLATE_DIR)/mangapage_head.template.html" "$@"; \
 	sed -i "/<!-- KS_PAGEMOUNT -->/r $(TEMPLATE_DIR)/mangapage.template.html" "$@"; \
 	envsubst < "$@" | sponge "$@"; \
 	chapter_html=`mktemp`; \
-	for k in `jq -c '.chapters | keys | .[]' "$(CONTENT_DIR)/$$mangafile.json"`; do \
-		chapter=`jq -rc ".chapters[$$k]" "$(CONTENT_DIR)/$$mangafile.json"`; \
+	for k in `jq -c '.chapters | keys | .[]' "$(MANGA_CONTENT_DIR)/$$mangafile.json"`; do \
+		chapter=`jq -rc ".chapters[$$k]" "$(MANGA_CONTENT_DIR)/$$mangafile.json"`; \
 		export KS_CHAPTERNAME=`echo "$$chapter" | jq -r '.chapter_name'`; \
 		export KS_PNGLINK=`echo "$$chapter" | jq -r '.png_link'`; \
 		export KS_PDFLINK=`echo "$$chapter" | jq -r '.pdf_link'`; \
@@ -108,7 +121,7 @@ $(OUT_DIR)/manga/%.html: $(CONTENT_DIR)/%.json
 	rm "$$chapter_html";
 
 # this is pretty similar to manga page, maybe abstract somehow
-$(RSS_DIR)/%.xml: $(CONTENT_DIR)/%.json
+$(RSS_DIR)/%.xml: $(MANGA_CONTENT_DIR)/%.json
 	@echo "building feed: $@"; \
 	export mangafile=$(notdir $(basename $@)); \
 	export KS_MANGATITLE=`jq -r '.name' "$^"`; \
@@ -116,8 +129,8 @@ $(RSS_DIR)/%.xml: $(CONTENT_DIR)/%.json
 	export KS_DESCRIPTION=`jq -r '.description' "$^"`; \
 	envsubst < $(TEMPLATE_DIR)/feed.template.xml > "$@"; \
 	chapter_xml=`mktemp`; \
-	for k in `jq -c '.chapters | keys | .[]' "$(CONTENT_DIR)/$$mangafile.json"`; do \
-		chapter=`jq -rc ".chapters[$$k]" "$(CONTENT_DIR)/$$mangafile.json"`; \
+	for k in `jq -c '.chapters | keys | .[]' "$(MANGA_CONTENT_DIR)/$$mangafile.json"`; do \
+		chapter=`jq -rc ".chapters[$$k]" "$(MANGA_CONTENT_DIR)/$$mangafile.json"`; \
 		export KS_CHAPTERNAME=`echo "$$chapter" | jq -r '.chapter_name'`; \
 		export KS_PNGLINK=`echo "$$chapter" | jq -r '.png_link'`; \
 		export KS_PDFLINK=`echo "$$chapter" | jq -r '.pdf_link'`; \
